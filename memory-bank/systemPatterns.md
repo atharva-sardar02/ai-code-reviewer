@@ -201,6 +201,36 @@ App
 - OpenAI API key input field
 - Note about .env fallback
 
+**FeedbackBlocks**
+- Parses AI responses into categorized sections (Errors, Suggestions, Improvements)
+- Auto Fix / Apply Code buttons for sections with code blocks
+- Integrates with CodeFixPreviewDialog for change preview
+
+**Message**
+- Renders user/assistant messages
+- Apply Code button for assistant messages with code blocks
+- Integrates with CodeFixPreviewDialog
+
+**CodeFixPreviewDialog**
+- GitHub-style unified diff view
+- Shows removed lines (−) and added lines (+) with line numbers
+- Summary section with change count
+- Apply All / Cancel actions
+- Glass-morphism styling
+
+**NewFileDialog**
+- Custom dialog replacing browser's native `prompt()`
+- File name input with extension suggestions
+- Glass-morphism styling matching app aesthetic
+
+**Toast**
+- Custom notification system replacing browser `alert()`
+- Four types: success (green), error (red), warning (amber), info (cyan)
+- Auto-dismiss with configurable duration
+- Slide-in/out animations
+- Close button for manual dismissal
+- ToastContainer for stacking multiple toasts
+
 ## Service Layer Pattern
 
 ### AI Service Abstraction
@@ -354,14 +384,26 @@ src/
 │   ├── CodeEditor/   # Monaco Editor integration
 │   │   ├── CodeEditor.tsx
 │   │   ├── useSelection.ts
-│   │   └── monacoConfig.ts  # NEW: Monaco configuration
-│   ├── FileExplorer/ # NEW: File management sidebar
+│   │   └── monacoConfig.ts  # Monaco configuration
+│   ├── CodeFixPreviewDialog/ # Code change preview
+│   │   ├── CodeFixPreviewDialog.tsx
+│   │   └── index.ts
+│   ├── FileExplorer/ # File management sidebar
 │   │   ├── FileExplorer.tsx
 │   │   └── index.ts
-│   ├── FileTabs/     # NEW: File tabs above editor
+│   ├── FileTabs/     # File tabs above editor
 │   │   ├── FileTabs.tsx
 │   │   └── index.ts
+│   ├── NewFileDialog/ # Custom file creation dialog
+│   │   ├── NewFileDialog.tsx
+│   │   └── index.ts
+│   ├── Toast/        # Custom notification system
+│   │   ├── Toast.tsx
+│   │   └── index.ts
 │   ├── ThreadPanel/   # Tab-based thread UI
+│   │   ├── FeedbackBlocks.tsx  # Categorized AI feedback with Auto Fix
+│   │   ├── Message.tsx         # Message display with Apply Code
+│   │   └── ...
 │   ├── Header/       # App header with logo
 │   ├── PromptInput/  # Message input
 │   └── ApiKeyInput/  # Settings modal
@@ -371,6 +413,11 @@ src/
 ├── store/            # State management
 ├── hooks/            # Custom React hooks
 ├── utils/            # Pure utility functions
+│   ├── codeExtractor.ts      # AI response code extraction
+│   ├── codeExtractor.test.ts # 30 unit tests
+│   ├── codeReplacer.ts       # Code replacement utilities
+│   ├── codeReplacer.test.ts  # 29 unit tests
+│   └── ...
 └── test/             # Test setup and utilities
 ```
 
@@ -384,6 +431,59 @@ src/
 6. **Service Layer Pattern**: Firestore abstraction
 7. **File System Pattern**: Multi-file workspace management
 8. **File Upload Pattern**: FileReader API for client-side file reading
+9. **Code Extraction Pattern**: Parse AI responses to extract actionable code blocks
+10. **Toast Notification Pattern**: Portal-based notifications for user feedback
+
+## AI Code Auto-Fix System
+
+### Architecture
+The auto-fix system allows users to apply AI-suggested code changes with one click:
+
+```
+AI Response → Code Extraction → Preview Dialog → User Confirmation → Code Replacement
+```
+
+### Code Extraction (`codeExtractor.ts`)
+- **stripLineNumbers()**: Removes line number prefixes from AI-generated code
+  - Supports multiple formats: `1| code`, `1. code`, `1: code`, `  1|code`
+- **stripExplanatoryComments()**: Removes AI explanatory comments
+  - Patterns: `// fixed`, `// changed X to Y`, `// corrected`, `// Line N`
+- **extractLineReferences()**: Finds line references in AI explanations
+  - Patterns: "line 5", "lines 10-15", "Line 42", etc.
+- **extractCodeBlocksWithLineInfo()**: Extracts code blocks with associated line ranges
+  - Parses markdown code fences
+  - Associates code with nearby line references
+  - Falls back to thread selection range if no specific lines found
+
+### Prompt Builder (`promptBuilder.ts`)
+- **Scoped Review**: AI only reviews selected code, not entire file
+- **Initial Feedback Detection**: `conversationHistory.length <= 1` (includes current message)
+- **Line Number Conversion**: Monaco 1-indexed → array 0-indexed in `extractSelectedCode()`
+- **Simplified Prompts**:
+  - System: Role + format instructions only (no code)
+  - Initial User: Only selected code snippet
+  - Follow-up: Full file for context when needed
+
+### Code Replacement (`codeReplacer.ts`)
+- **replaceLines()**: Replaces specific line range with new code
+- **applyMultipleReplacements()**: Applies multiple non-overlapping replacements
+- **prepareCodeFixes()**: Filters and prepares fixes for preview
+  - Removes empty/invalid fixes
+  - Removes duplicate fixes
+  - Validates line ranges
+- **mergeOverlappingReplacements()**: Handles overlapping code changes
+
+### Preview Dialog (`CodeFixPreviewDialog.tsx`)
+- GitHub-style unified diff view
+- Removed lines shown with red background and `−` prefix
+- Added lines shown with green background and `+` prefix
+- Line numbers displayed for context
+- Summary showing number of changes and lines affected
+
+### Integration Points
+- **FeedbackBlocks**: "Auto Fix" button for error categories, "Apply Code" for suggestions
+- **Message**: "Apply Code" button for all assistant messages with code blocks
+- **Toast**: Success/error notifications after applying changes
 
 ## File Upload Implementation
 

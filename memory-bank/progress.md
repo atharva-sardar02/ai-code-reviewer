@@ -128,6 +128,27 @@
 - ✅ **Layout Adjustments**: COMPLETE
   - Thread panel width increased to 48% (from 38%)
   - Better balance between editor and chat
+- ✅ **AI Code Auto-Fix System**: COMPLETE
+  - Code extraction utilities (`codeExtractor.ts`)
+  - Code replacement utilities (`codeReplacer.ts`)
+  - Code fix preview dialog with GitHub-style diff view
+  - Auto Fix / Apply Code buttons in FeedbackBlocks and Messages
+  - Works for initial reviews and follow-up conversations
+  - Unit tests for extractors and replacers (59 tests)
+- ✅ **Custom Dialog Components**: COMPLETE
+  - NewFileDialog replacing browser's `prompt()`
+  - Glass-morphism styled to match app aesthetic
+- ✅ **Toast Notification System**: COMPLETE
+  - Custom Toast component replacing all browser `alert()` calls
+  - Four types: success (green), error (red), warning (amber), info (cyan)
+  - Auto-dismiss with smooth animations
+  - Stacking support for multiple toasts
+- ✅ **Scoped AI Review System**: COMPLETE
+  - AI reviews ONLY the selected code, not the entire file
+  - Fixed line number indexing bug (Monaco 1-indexed to array 0-indexed)
+  - Fixed initial feedback detection (`conversationHistory.length <= 1`)
+  - Simplified prompts to prevent AI from reviewing unselected code
+  - Auto-strip explanatory comments from AI code blocks
 
 ### Documentation Status
 - ✅ PRD reviewed and understood
@@ -206,8 +227,10 @@ None - all implementations working correctly.
 - ✅ **lineUtils.ts**: 100% coverage (exceeds >90% target)
 - ✅ **useThreads.ts**: 83.33% coverage
 - ✅ **AI Services**: >80% coverage
-- ✅ **Overall**: ~80% coverage (estimated)
-- ✅ All tests passing (60+ tests)
+- ✅ **codeExtractor.ts**: 30 unit tests for line number stripping, code block extraction
+- ✅ **codeReplacer.ts**: 29 unit tests for line replacement, multiple replacements
+- ✅ **Overall**: ~85% coverage (estimated)
+- ✅ All tests passing (100+ tests)
 
 ### Test Updates Needed
 - ⚠️ File management tests (FileExplorer, FileTabs) - future work

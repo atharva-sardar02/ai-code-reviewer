@@ -120,7 +120,7 @@ export function Thread({ thread }: ThreadProps) {
               </div>
             ) : (
               thread.messages.map((message, index) => (
-                <Message key={index} message={message} />
+                <Message key={index} message={message} threadId={thread.id} fileId={thread.fileId} />
               ))
             )}
           </div>

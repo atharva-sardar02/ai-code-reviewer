@@ -6,6 +6,8 @@ import { ThreadPanel } from './components/ThreadPanel'
 import { ApiKeyInput } from './components/ApiKeyInput'
 import { FileExplorer } from './components/FileExplorer'
 import { FileTabs } from './components/FileTabs'
+import { NewFileDialog } from './components/NewFileDialog'
+import { ToastContainer } from './components/Toast'
 import { useThreads } from './hooks/useThreads'
 import { useConversation } from './hooks/useConversation'
 
@@ -23,6 +25,7 @@ function AppContent() {
   } = useThreads()
   const { sendMessage } = useConversation()
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [isNewFileDialogOpen, setIsNewFileDialogOpen] = useState(false)
   const [language, setLanguage] = useState('javascript')
   const initialMessageSentRef = useRef<Set<string>>(new Set())
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -115,11 +118,12 @@ function AppContent() {
   }
 
   const handleCreateFile = () => {
-    const name = prompt('Enter file name (e.g., App.tsx):')
-    if (name && name.trim()) {
-      const lang = getLanguageFromExtension(name)
-      createFile(name.trim(), lang)
-    }
+    setIsNewFileDialogOpen(true)
+  }
+
+  const handleNewFileSubmit = (name: string) => {
+    const lang = getLanguageFromExtension(name)
+    createFile(name, lang)
   }
 
   const handleUploadFile = () => {
@@ -254,6 +258,11 @@ function AppContent() {
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
       />
+      <NewFileDialog
+        isOpen={isNewFileDialogOpen}
+        onClose={() => setIsNewFileDialogOpen(false)}
+        onCreateFile={handleNewFileSubmit}
+      />
       {/* Hidden file input for upload */}
       <input
         ref={fileInputRef}
@@ -270,6 +279,7 @@ function App() {
   return (
     <ThreadProvider>
       <AppContent />
+      <ToastContainer />
     </ThreadProvider>
   )
 }

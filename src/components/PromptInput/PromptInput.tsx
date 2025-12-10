@@ -1,5 +1,4 @@
 import { useState, type KeyboardEvent } from 'react'
-import { useThreads } from '../../hooks/useThreads'
 import { useConversation } from '../../hooks/useConversation'
 import { isValidMessage } from '../../utils/validation'
 
@@ -11,7 +10,6 @@ interface PromptInputProps {
 export function PromptInput({ threadId, disabled = false }: PromptInputProps) {
   const [input, setInput] = useState('')
   const [isFocused, setIsFocused] = useState(false)
-  const { addMessage } = useThreads()
   const { sendMessage } = useConversation()
 
   const handleSubmit = async () => {
@@ -20,16 +18,10 @@ export function PromptInput({ threadId, disabled = false }: PromptInputProps) {
     // Validate message using validation utility
     if (!isValidMessage(trimmedInput) || disabled) return
 
-    // Add user message
-    addMessage(threadId, {
-      role: 'user',
-      content: trimmedInput,
-    })
-
-    // Clear input
+    // Clear input immediately for better UX
     setInput('')
 
-    // Send message to AI
+    // Send message to AI (this also adds the user message to the thread)
     await sendMessage(threadId, trimmedInput)
   }
 

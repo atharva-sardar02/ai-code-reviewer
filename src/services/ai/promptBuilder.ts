@@ -24,52 +24,22 @@ const CONTEXT_PADDING = 50
  * @returns The formatted system prompt string
  */
 export function buildSystemPrompt(
-  code: string,
+  _code: string,
   language: string = 'javascript',
-  selection?: { startLine: number; endLine: number }
+  _selection?: { startLine: number; endLine: number }
 ): string {
-  // Use context-aware truncation if selection is provided
-  const truncatedCode = selection
-    ? truncateCodeWithContext(code, selection.startLine, selection.endLine)
-    : truncateCodeIfNeeded(code)
-  
-  return `You are an expert code reviewer helping a developer understand and improve their code.
+  return `You are an expert ${language} code reviewer.
 
-The developer has shared ${language} code and selected specific lines to discuss. Your role is to:
-1. Provide clear, helpful explanations about the selected code
-2. Suggest improvements when appropriate
-3. Answer questions about how the code works
-4. Point out potential bugs or issues
-5. Explain best practices relevant to the code
+Review the code the user provides. Find errors, bugs, and suggest improvements.
 
-Here is the full code context:
+RESPONSE FORMAT:
+### ERRORS - List bugs/errors found. Provide COMPLETE corrected code. Skip if no errors.
+### SUGGESTIONS - Optional tips
+### IMPROVEMENTS - Optional optimizations
+### EXPLANATIONS - Optional explanations
 
-\`\`\`${language}
-${truncatedCode}
-\`\`\`
-
-When providing initial feedback on a code selection, structure your response using these categories (in this order):
-- **ERRORS**: Actual bugs, syntax errors, or critical issues. MUST include corrected code in code blocks. If NO errors exist, DO NOT include this section.
-- **SUGGESTIONS**: General suggestions for improvement (optional, only if relevant)
-- **IMPROVEMENTS**: Specific code improvements or optimizations with code examples (optional, only if relevant)
-- **EXPLANATIONS**: Brief explanations of how the code works (optional, only if needed)
-
-CRITICAL RULES - READ CAREFULLY:
-1. Each category must contain UNIQUE content - NEVER duplicate content from other categories
-2. ERRORS category - BE THOROUGH IN ERROR DETECTION:
-   - CAREFULLY check for missing closing tags (</div>, }, ), ], etc.)
-   - Check for syntax errors, typos, incorrect syntax
-   - Check for logical errors that would cause runtime failures
-   - Check for type errors if applicable
-   - If you find ANY error, you MUST include an ERRORS section with:
-     * A clear description of the error
-     * The corrected code in a code block showing the fix
-   - DO NOT say "no errors" or "there are no errors" - simply omit the ERRORS section entirely if there are none
-3. If there are no actual errors, DO NOT create an ERRORS section at all (not even to say "no errors")
-4. Each category is independent - do not repeat information from one category in another
-5. Be thorough: carefully examine the code line by line for syntax errors, missing elements, and bugs
-
-Format your response with clear category headers using ### markdown syntax (e.g., ### SUGGESTIONS, ### IMPROVEMENTS, ### EXPLANATIONS, ### ERRORS).`
+IMPORTANT: When providing corrected code, show ALL lines (complete snippet), not just changed lines.
+No "// fixed" comments in code - explain in text before code block.`
 }
 
 /**
@@ -89,50 +59,47 @@ export function buildUserPrompt(
   const { code, selection, userMessage } = request
   const selectedCode = extractSelectedCode(code, selection.startLine, selection.endLine)
   
-  // Check if this is an initial feedback request (no conversation history)
-  const isInitialFeedback = request.conversationHistory.length === 0
+  // DEBUG: Log what's being sent to AI
+  console.log('=== AI PROMPT DEBUG ===')
+  console.log('Selection range:', selection.startLine, '-', selection.endLine)
+  console.log('Full code lines:', code.split('\n').length)
+  console.log('Conversation history length:', request.conversationHistory.length)
+  console.log('Selected code:')
+  console.log(selectedCode)
+  console.log('=== END DEBUG ===')
+  
+  // Check if this is an initial feedback request
+  // conversationHistory includes the current user message, so length <= 1 means it's the first message
+  const isInitialFeedback = request.conversationHistory.length <= 1
   
   if (isInitialFeedback) {
-    return `The developer has selected lines ${selection.startLine + 1}-${selection.endLine + 1} and wants feedback on this code:
+    return `Review this ${request.language || 'typescript'} code:
 
-Selected code:
-\`\`\`
+\`\`\`${request.language || 'typescript'}
 ${selectedCode}
 \`\`\`
 
-Please provide comprehensive feedback structured into these categories (in this order):
-- **ERRORS**: Actual bugs, syntax errors, or critical issues. MUST include corrected code in code blocks. If NO errors exist, DO NOT include this section.
-- **SUGGESTIONS**: General suggestions for improvement (only if relevant)
-- **IMPROVEMENTS**: Specific code improvements with examples (only if relevant)
-- **EXPLANATIONS**: Brief explanations of how the code works (only if needed)
-
-CRITICAL REQUIREMENTS - FOLLOW STRICTLY:
-1. NEVER duplicate content across categories - each category must have unique content
-2. ERRORS section - BE THOROUGH AND CAREFUL:
-   - Carefully check for missing closing tags (</div>, }, ), etc.)
-   - Check for syntax errors, typos, incorrect syntax
-   - Check for logical errors that would cause failures
-   - If you find ANY error, you MUST include an ERRORS section with:
-     * A clear description of the error
-     * The corrected code in a code block showing the fix
-   - DO NOT say "no errors" or "there are no errors" - simply omit the ERRORS section entirely if there are none
-3. If there are no actual errors, DO NOT create an ERRORS section at all
-4. Each category is independent - do not copy content from one category to another
-5. Be thorough in your error detection - examine the code carefully for all types of errors
-
-Format your response using ### markdown headers (e.g., ### SUGGESTIONS, ### IMPROVEMENTS, ### EXPLANATIONS, ### ERRORS).`
+Find any errors, bugs, or issues. If you find errors, provide the complete corrected code.
+No comments like "// fixed" in code - explain changes in text before the code block.`
   }
   
-  return `The developer has selected lines ${selection.startLine + 1}-${selection.endLine + 1} and asks:
+  // For follow-up messages, include the full current code since line numbers may have changed
+  // after applying previous fixes
+  return `The developer asks about their SELECTED CODE (originally lines ${selection.startLine + 1}-${selection.endLine + 1}):
 
 "${userMessage}"
 
-Selected code:
+Here is the current full code for CONTEXT:
 \`\`\`
-${selectedCode}
+${code}
 \`\`\`
 
-Please provide a helpful response about this code selection.`
+IMPORTANT REMINDERS:
+- The developer originally selected lines ${selection.startLine + 1}-${selection.endLine + 1}
+- The code may have been modified since the original selection
+- Focus your response on the code that was originally selected
+- Use the full file for context but keep suggestions focused on the relevant section
+- If you suggest code changes, provide the corrected code in a code block with clear line references`
 }
 
 /**
@@ -177,7 +144,8 @@ export function buildConversationMessages(
 }
 
 /**
- * Extracts the selected code lines from the full code
+ * Extracts the selected code lines from the full code (clean, no line numbers)
+ * Note: startLine and endLine are 1-indexed (from Monaco editor)
  */
 function extractSelectedCode(
   code: string,
@@ -185,33 +153,11 @@ function extractSelectedCode(
   endLine: number
 ): string {
   const lines = code.split('\n')
-  const selectedLines = lines.slice(startLine, endLine + 1)
-  
-  // Add line numbers for clarity
-  return selectedLines
-    .map((line, index) => {
-      const lineNum = startLine + index + 1
-      return `${lineNum.toString().padStart(4, ' ')} | ${line}`
-    })
-    .join('\n')
-}
-
-/**
- * Truncates code if it's too long, keeping context around selection
- */
-function truncateCodeIfNeeded(code: string): string {
-  const lines = code.split('\n')
-  
-  // If code is short enough, return as-is
-  if (lines.length <= MAX_CONTEXT_LINES) {
-    return code
-  }
-  
-  // For long files, we'd need to know the selection to keep context
-  // For now, just truncate to first MAX_CONTEXT_LINES
-  // In a real implementation, we'd pass selection and keep context around it
-  const truncated = lines.slice(0, MAX_CONTEXT_LINES).join('\n')
-  return `${truncated}\n\n... (code truncated, showing first ${MAX_CONTEXT_LINES} lines) ...`
+  // Convert from 1-indexed (Monaco) to 0-indexed (array)
+  const startIdx = startLine - 1
+  const endIdx = endLine - 1
+  const selectedLines = lines.slice(startIdx, endIdx + 1)
+  return selectedLines.join('\n')
 }
 
 /**

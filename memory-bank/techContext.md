@@ -267,6 +267,24 @@ firebase deploy --only hosting
 - Mobile responsive design is out of scope for V1
 - Developer tool, desktop-first is acceptable
 
+## Code Auto-Fix Utilities
+
+### codeExtractor.ts
+Utilities for parsing AI responses and extracting actionable code:
+- `stripLineNumbers(code)`: Removes line number prefixes from AI-generated code
+- `hasLineNumbers(code)`: Detects if code has line number prefixes
+- `extractLineReferences(text)`: Finds line references (e.g., "line 5", "lines 10-15")
+- `extractAllCodeBlocks(content)`: Extracts all code blocks from markdown
+- `extractCodeBlocksWithLineInfo(content, fallbackRange)`: Extracts code with line info
+
+### codeReplacer.ts
+Utilities for applying code changes:
+- `replaceLines(content, startLine, endLine, newCode)`: Replace specific lines
+- `applyMultipleReplacements(content, replacements)`: Apply multiple changes
+- `prepareCodeFixes(content, replacements)`: Prepare and filter fixes for preview
+- `validateNoOverlaps(replacements)`: Check for overlapping ranges
+- `mergeOverlappingReplacements(replacements)`: Merge overlapping changes
+
 ## Known Limitations
 
 1. **Stale Line References**: If code is edited after thread creation, line numbers may become stale

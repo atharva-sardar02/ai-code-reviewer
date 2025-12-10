@@ -29,6 +29,50 @@ The project is now feature-complete with:
 
 ## Recent Major Changes
 
+### AI Code Auto-Fix System (December 2025)
+- ✅ **Code Extraction Utilities**: `codeExtractor.ts` for parsing AI responses
+  - Strip line numbers from AI-generated code (multiple formats supported)
+  - Strip explanatory comments (e.g., "// fixed", "// changed X to Y")
+  - Extract line references from AI explanations
+  - Extract code blocks with associated line info
+- ✅ **Code Replacement Utilities**: `codeReplacer.ts` for applying changes
+  - Replace specific line ranges in file content
+  - Apply multiple replacements with overlap handling
+  - Prepare and filter code fixes
+  - Detect when AI returns entire file instead of selection
+- ✅ **Code Fix Preview Dialog**: `CodeFixPreviewDialog.tsx`
+  - GitHub-style unified diff view with line numbers
+  - Shows removed lines (−) and added lines (+) with syntax highlighting
+  - Summary section showing number of changes and lines affected
+  - Apply All / Cancel actions
+- ✅ **Auto Fix Buttons**: Integrated into FeedbackBlocks and Message components
+  - "Auto Fix" button for error categories (red)
+  - "Apply Code" button for suggestions/improvements and follow-up responses (cyan)
+  - Works for both initial code review and follow-up conversations
+- ✅ **Custom Toast Notifications**: Replaced all browser `alert()` dialogs
+  - `Toast.tsx` component with success/error/warning/info types
+  - Glass-morphism styled notifications
+  - Auto-dismiss with smooth animations
+  - Stacking support for multiple toasts
+
+### Scoped AI Review System (December 2025)
+- ✅ **Selection-Only Review**: AI now ONLY reviews the selected code portion
+  - Initial feedback sends ONLY selected code (no full file context)
+  - Fixed line number indexing (Monaco 1-indexed → array 0-indexed)
+  - Fixed initial feedback detection (`conversationHistory.length <= 1`)
+- ✅ **Prompt Simplification**: Streamlined prompts to prevent AI distraction
+  - System prompt: Just role and format instructions, no code
+  - User prompt: Only selected code for initial review
+  - Follow-up prompts: Full file for context when needed
+- ✅ **Comment Stripping**: Auto-remove AI explanatory comments
+  - `stripExplanatoryComments()` removes "// fixed", "// changed", etc.
+  - Applied to all extracted code blocks before applying fixes
+
+### Custom Dialog Components (December 2025)
+- ✅ **NewFileDialog**: Custom styled dialog replacing browser's native `prompt()`
+  - Matches app's glass-morphism aesthetic
+  - Integrated into FileExplorer and App landing page
+
 ### Multi-File Workspace (PR #9)
 - ✅ **File System**: Replaced single `code` string with `files` array
 - ✅ **FileExplorer Component**: Left sidebar (15%) with file list, create/delete buttons, open file indicators
@@ -147,6 +191,12 @@ The project is now feature-complete with:
   - Button variants (primary, secondary, ghost)
   - Custom scrollbar styling
 
+**AI Code Auto-Fix**: Intelligent code replacement system
+- Code Extraction: `src/utils/codeExtractor.ts`
+- Code Replacement: `src/utils/codeReplacer.ts`
+- Preview Dialog: `src/components/CodeFixPreviewDialog/`
+- Toast Notifications: `src/components/Toast/`
+
 **Data Persistence**: Firebase Firestore
 - Collection: `workspaces` with `default` document
 - Auto-saves: files, threads, messages, active file, active thread
@@ -197,6 +247,12 @@ The project is now feature-complete with:
 16. **Close tab ≠ Delete file** - ✅ Closing tabs keeps files, cleaner UX
 17. **Landing page on empty tabs** - ✅ Shows welcome when no files open, hides chat
 18. **Wider thread panel** - ✅ 48% width for better AI conversation readability
+19. **AI Auto-Fix** - ✅ One-click code application from AI suggestions
+20. **Custom dialogs** - ✅ Replaced browser prompts/alerts with styled components
+21. **Toast notifications** - ✅ Glass-morphism styled notifications replacing browser alerts
+22. **Scoped AI review** - ✅ AI only reviews selected code, not entire file
+23. **Line number fix** - ✅ Fixed 1-indexed (Monaco) to 0-indexed (array) conversion
+24. **Initial feedback fix** - ✅ Fixed detection to use `<= 1` instead of `=== 0`
 
 ### Technical Decisions
 - **Radix UI**: Accessible component primitives, no utility CSS framework

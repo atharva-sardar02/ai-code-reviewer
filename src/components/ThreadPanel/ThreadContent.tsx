@@ -129,11 +129,11 @@ export function ThreadContent({ thread }: ThreadContentProps) {
                           return true // Show fallback message on error
                         }
                       })() && (
-                        <Message message={message} />
+                        <Message message={message} threadId={thread.id} fileId={thread.fileId} />
                       )}
                     </>
                   ) : (
-                    <Message message={message} />
+                    <Message message={message} threadId={thread.id} fileId={thread.fileId} />
                   )}
                 </div>
               )

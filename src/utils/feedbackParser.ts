@@ -85,19 +85,39 @@ export function parseFeedback(response: string): FeedbackCategory[] {
       let content = response.substring(contentStart, contentEnd).trim()
       
       // Remove leading dashes/bullets and clean up
-      // Also handle code blocks and preserve formatting
-      const cleanedContent = content
-        .split('\n')
-        .map(line => {
-          // Remove leading bullet points
-          line = line.replace(/^[-*]\s+/, '').trim()
-          // Remove leading numbers if present
-          line = line.replace(/^\d+\.\s+/, '').trim()
-          return line
-        })
-        .filter(line => line.length > 0)
-        .join('\n')
-        .trim()
+      // But preserve code blocks exactly as they are
+      const lines = content.split('\n')
+      const processedLines: string[] = []
+      let inCodeBlock = false
+      
+      for (const line of lines) {
+        // Check if we're entering or leaving a code block
+        if (line.trim().startsWith('```')) {
+          inCodeBlock = !inCodeBlock
+          processedLines.push(line) // Keep code block markers as-is
+          continue
+        }
+        
+        // If inside a code block, preserve the line exactly (including empty lines)
+        if (inCodeBlock) {
+          processedLines.push(line)
+          continue
+        }
+        
+        // Outside code blocks, clean up
+        let cleanedLine = line
+        // Remove leading bullet points
+        cleanedLine = cleanedLine.replace(/^[-*]\s+/, '').trim()
+        // Remove leading numbers if present
+        cleanedLine = cleanedLine.replace(/^\d+\.\s+/, '').trim()
+        
+        // Only add non-empty lines outside code blocks
+        if (cleanedLine.length > 0) {
+          processedLines.push(cleanedLine)
+        }
+      }
+      
+      const cleanedContent = processedLines.join('\n').trim()
       
       if (cleanedContent && cleanedContent.length > 0) {
         let finalContent = cleanedContent

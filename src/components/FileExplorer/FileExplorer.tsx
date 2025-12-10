@@ -1,10 +1,12 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { useThreads } from '../../hooks/useThreads'
+import { NewFileDialog } from '../NewFileDialog'
 
 export function FileExplorer() {
   const { files, activeFileId, openFileIds, openFile, createFile, createFileFromContent, deleteFile } = useThreads()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isNewFileDialogOpen, setIsNewFileDialogOpen] = useState(false)
 
   const getLanguageFromExtension = (filename: string): string => {
     const ext = filename.split('.').pop()?.toLowerCase() || 'javascript'
@@ -37,11 +39,12 @@ export function FileExplorer() {
   }
 
   const handleCreateFile = () => {
-    const name = prompt('Enter file name (e.g., App.tsx):')
-    if (name && name.trim()) {
-      const language = getLanguageFromExtension(name)
-      createFile(name.trim(), language)
-    }
+    setIsNewFileDialogOpen(true)
+  }
+
+  const handleNewFileSubmit = (name: string) => {
+    const language = getLanguageFromExtension(name)
+    createFile(name, language)
   }
 
   const handleUploadFile = () => {
@@ -113,16 +116,22 @@ export function FileExplorer() {
   }
 
   return (
-    <div
-      style={{
-        width: '100%',
-        height: '100%',
-        background: 'linear-gradient(180deg, #111827 0%, #0a0e17 100%)',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-      }}
-    >
+    <>
+      <NewFileDialog
+        isOpen={isNewFileDialogOpen}
+        onClose={() => setIsNewFileDialogOpen(false)}
+        onCreateFile={handleNewFileSubmit}
+      />
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          background: 'linear-gradient(180deg, #111827 0%, #0a0e17 100%)',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+        }}
+      >
       {/* Header */}
       <div
         style={{
@@ -458,5 +467,6 @@ export function FileExplorer() {
         )}
       </div>
     </div>
+    </>
   )
 }
