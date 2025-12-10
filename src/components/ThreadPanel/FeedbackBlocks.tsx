@@ -70,7 +70,7 @@ interface FeedbackBlockProps {
   fileId: string
 }
 
-function FeedbackBlock({ category, threadId, fileId }: FeedbackBlockProps) {
+function FeedbackBlock({ category, threadId: _threadId, fileId }: FeedbackBlockProps) {
   const { files, updateFile } = useThreads()
   const color = getCategoryColor(category.type)
   const bgColor = getCategoryBgColor(category.type)

@@ -14,8 +14,8 @@ Developers often need quick, contextual feedback on specific code sections. Gene
 ## How It Should Work
 
 ### User Flow
-1. Developer creates or opens a file in the editor
-2. Developer writes/pastes code into the file
+1. Developer creates a new file (via prompt) or uploads an existing file (via file picker)
+2. Developer writes/pastes code into the file (or code is loaded from uploaded file)
 3. Developer selects specific lines of code
 4. Developer clicks "Ask AI" or uses keyboard shortcut
 5. A conversation thread opens in the right panel, anchored to those lines
@@ -77,7 +77,7 @@ Developers often need quick, contextual feedback on specific code sections. Gene
 
 ### Must Have
 - U1: Create and manage multiple files
-- U2: Paste code into editor without switching tools
+- U2: Upload existing files or paste code into editor without switching tools
 - U3: Select specific lines to ask targeted questions
 - U4: AI understands surrounding code context
 - U5: Have conversation thread about a code section

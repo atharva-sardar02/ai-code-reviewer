@@ -52,21 +52,15 @@ export function ThreadProvider({ children }: ThreadProviderProps) {
           })
         }
 
-        // Create files
+        // Load files without opening them (start with landing page)
         workspaceData.files.forEach((file) => {
           dispatch({
-            type: 'CREATE_FILE',
+            type: 'LOAD_FILE',
             payload: file,
           })
         })
 
-        // Set active file
-        if (workspaceData.activeFileId) {
-          dispatch({
-            type: 'SET_ACTIVE_FILE',
-            payload: workspaceData.activeFileId,
-          })
-        }
+        // Don't restore activeFileId - start with no files open (landing page)
 
         // Temporarily set activeThreadId to null to prevent CREATE_THREAD from setting it
         dispatch({ type: 'SET_ACTIVE_THREAD', payload: null })

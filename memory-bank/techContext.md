@@ -6,7 +6,8 @@
 |-----------|--------|-----------|
 | **Framework** | React 19 | Latest React version, excellent for component-based UI |
 | **Code Editor** | Monaco Editor | VS Code's editor, excellent selection APIs, built-in syntax highlighting |
-| **Styling** | Radix UI + Custom CSS | Accessible components, no framework overhead, full control |
+| **Styling** | Radix UI + Custom CSS Design System | Accessible components, elegant dark theme, CSS variables |
+| **Typography** | Plus Jakarta Sans + JetBrains Mono | Modern UI font + code-optimized monospace (Google Fonts) |
 | **State Management** | React Context + useReducer | Sufficient for prototype complexity, no extra dependencies |
 | **Database** | Firebase Firestore | Real-time sync, easy setup, free tier sufficient |
 | **AI API** | OpenAI API | Strong code understanding, good context windows |
@@ -34,6 +35,10 @@ npm install @radix-ui/react-dialog @radix-ui/react-select @radix-ui/react-separa
 npm install firebase
 npm install -D vitest @testing-library/react @testing-library/jest-dom @testing-library/user-event jsdom @vitest/coverage-v8
 ```
+
+### Fonts (loaded via Google Fonts in CSS)
+- **Plus Jakarta Sans**: Modern sans-serif for UI (weights: 400, 500, 600, 700)
+- **JetBrains Mono**: Code-optimized monospace for code blocks (weights: 400, 500, 600)
 
 ### Environment Variables
 - `.env` file for local development (not committed)

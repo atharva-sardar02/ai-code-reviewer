@@ -5,10 +5,11 @@
 The application follows a **component-based React architecture** with:
 - **Monaco Editor** for code editing (center pane)
 - **FileExplorer** for file management (left sidebar, 15%)
-- **FileTabs** for quick file switching (above editor)
-- **Thread Panel** with tab-based UI for conversations (right pane, 40%)
+- **FileTabs** for open file tabs (above editor, session-based)
+- **Thread Panel** with tab-based UI for conversations (right pane, 48%)
+- **Landing Page** when no files open (welcome message, create file button)
 - **React Context + useReducer** for state management
-- **Firebase Firestore** for data persistence
+- **Firebase Firestore** for data persistence (files, threads - not open tabs)
 - **Service layer** for AI integration (OpenAI-only)
 - **Radix UI** for accessible component primitives
 
@@ -33,9 +34,10 @@ The application follows a **component-based React architecture** with:
 - **Rationale**: Locking edits too restrictive; documented as V1 limitation
 
 ### API Key Handling
-- **Choice**: `.env` file (VITE_OPENAI_API_KEY) or UI input field
-- **Rationale**: Flexible for both dev setup and live demos
-- **Priority**: User input > .env file
+- **Choice**: `.env` file (VITE_OPENAI_API_KEY) only (UI input removed for security)
+- **Rationale**: Prevents API key exposure in deployed applications
+- **Implementation**: API key must be set at build time via environment variable
+- **Settings UI**: Shows read-only status of API key configuration
 
 ### AI Provider
 - **Choice**: OpenAI-only (removed mock mode)
@@ -60,12 +62,13 @@ The application follows a **component-based React architecture** with:
 ### State Shape
 ```typescript
 {
-  files: File[],
+  files: File[],              // All files (persisted to Firestore)
+  openFileIds: string[],      // Files currently open in tabs (NOT persisted)
   activeFileId: string | null,
   threads: [
     {
       id: string,
-      fileId: string,  // NEW: Associates thread with file
+      fileId: string,  // Associates thread with file
       startLine: number,
       endLine: number,
       messages: [{ role: 'user' | 'assistant', content: string }],
@@ -93,12 +96,15 @@ The application follows a **component-based React architecture** with:
 ```
 
 ### Reducer Actions
-- `CREATE_FILE`: Creates new file
+- `CREATE_FILE`: Creates new file (empty or with content) AND opens it in tabs
+- `LOAD_FILE`: Loads file from Firestore WITHOUT opening in tabs (for session restore)
 - `UPDATE_FILE`: Updates file content
-- `DELETE_FILE`: Deletes file and associated threads
+- `DELETE_FILE`: Deletes file, removes from open tabs, and deletes associated threads
 - `SET_ACTIVE_FILE`: Switches active file
 - `RENAME_FILE`: Renames file
-- `CREATE_THREAD`: Creates new thread (now includes `fileId`)
+- `OPEN_FILE`: Opens file in tabs and sets as active (if not already open)
+- `CLOSE_FILE`: Closes file tab WITHOUT deleting file
+- `CREATE_THREAD`: Creates new thread (includes `fileId`)
 - `ADD_MESSAGE`: Adds message to thread
 - `SET_ACTIVE_THREAD`: Sets active thread ID
 - `TOGGLE_THREAD_EXPANDED`: Expands/collapses thread
@@ -116,14 +122,18 @@ App
 ├── Header (fixed, logo, language selector, settings)
 └── Main (split layout)
     ├── FileExplorer (15% width)
-    │   ├── Header ("Files" + "New" button)
-    │   └── File List (click to open, delete button)
-    ├── CodeEditor Area (45% width)
-    │   ├── FileTabs (horizontal tabs with close buttons)
+    │   ├── Header ("Files" + "New" dropdown menu)
+    │   └── File List (click to open, delete button, open indicator dot)
+    ├── CodeEditor Area (37% width when file open, full width on landing)
+    │   ├── FileTabs (shows only open files, close tabs don't delete)
     │   └── CodeEditor
-    │       ├── Monaco Editor
+    │       ├── Monaco Editor (when file open)
+    │       ├── Landing Page (when no files open)
+    │       │   ├── Welcome text
+    │       │   ├── Getting started steps
+    │       │   └── Action buttons ("Create New" + "Upload File" side by side)
     │       └── "Ask AI" button (on selection only)
-    └── ThreadPanel (40% width)
+    └── ThreadPanel (48% width, hidden on landing page)
         ├── Tabs Bar (horizontal, line ranges for active file only)
         └── ThreadContent
             ├── Messages (user/assistant)
@@ -135,16 +145,19 @@ App
 **FileExplorer**
 - Left sidebar (15% width)
 - File list with active file highlighted
-- "New" button to create files
+- "New" button with dropdown menu (Create New File / Upload File)
+- File upload support via hidden file input
 - Delete button on each file
 - Click file to open
+- Language auto-detection from file extension
 
 **FileTabs**
 - Tab bar above editor
-- Shows all files as tabs
-- Active tab highlighted
-- Close button on each tab
-- Click tab to switch files
+- Shows only OPEN files as tabs (from `openFileIds`)
+- Active tab highlighted with cyan accent
+- Close button on each tab (closes tab, doesn't delete file)
+- Click tab to switch active file
+- Hidden when no files open (landing page)
 
 **Header**
 - Fixed at top
@@ -153,11 +166,14 @@ App
 - Settings button
 
 **CodeEditor**
-- Renders Monaco Editor
+- Renders Monaco Editor when file is open
+- Renders Landing Page when no files open (welcome message, dual action buttons)
+- Landing page buttons: "Create New" (primary) and "Upload File" (secondary) side by side
 - Accepts `file` prop (not `code` string)
 - Captures selection events
 - Highlights active thread lines
 - Provides "Ask AI" action (only on selection)
+- Provides `onCreateFile` and `onUploadFile` callbacks on landing page
 - Configured to prevent false error indicators
 
 **ThreadPanel**
@@ -249,9 +265,12 @@ workspaces/
 
 ### Persistence Strategy
 - **Auto-save**: Debounced saves on state changes (1 second)
-- **Auto-load**: Load on app initialization
+- **Auto-load**: Load on app initialization (files loaded with `LOAD_FILE`, not opened)
+- **Session-based tabs**: `openFileIds` NOT persisted - always starts empty on reload
 - **Real-time**: Optional subscription for sync
 - **Migration**: Automatically converts old format to new format
+- **What persists**: files, threads, messages, activeThreadId
+- **What doesn't persist**: openFileIds, activeFileId (starts fresh each session)
 
 ## Context Window Management
 
@@ -364,17 +383,80 @@ src/
 5. **Factory Pattern**: AI provider selection
 6. **Service Layer Pattern**: Firestore abstraction
 7. **File System Pattern**: Multi-file workspace management
+8. **File Upload Pattern**: FileReader API for client-side file reading
+
+## File Upload Implementation
+
+### File Upload Flow
+1. User clicks "New" button → Dropdown menu appears
+2. User selects "Upload File" → Hidden file input triggered
+3. File picker opens → User selects file
+4. FileReader reads file content as text
+5. Language detected from file extension
+6. `createFileFromContent` creates file with content
+7. File automatically set as active file
+
+### Supported File Types
+- TypeScript/JavaScript: `.ts`, `.tsx`, `.js`, `.jsx`
+- Python: `.py`
+- Java: `.java`
+- C/C++: `.c`, `.cpp`
+- C#: `.cs`
+- Go: `.go`
+- Rust: `.rs`
+- Ruby: `.rb`
+- PHP: `.php`
+- Swift: `.swift`
+- Kotlin: `.kt`
+- Web: `.html`, `.css`, `.scss`
+- Data: `.json`, `.xml`, `.yaml`, `.yml`
+- Markdown: `.md`
+- Text: `.txt`
 
 ## Styling Architecture
 
-### Radix UI Components
-- Dialog: Settings modal
-- Select: Language selector
-- Separator: Visual dividers
-- DropdownMenu: (available for future use)
+### Design System (December 2025 Redesign)
+The application uses a modern, elegant design system with:
 
-### Custom CSS
-- Utility classes in `src/index.css`
+**CSS Variables** (`src/index.css`):
+- `--bg-primary: #0a0e17` - Main background
+- `--bg-secondary: #111827` - Secondary surfaces
+- `--bg-tertiary: #1a2234` - Elevated surfaces
+- `--accent-primary: #06b6d4` - Cyan accent color
+- `--accent-gradient: linear-gradient(135deg, #06b6d4, #0891b2)` - Gradient accent
+- `--text-primary: #f1f5f9` - Primary text
+- `--text-secondary: #94a3b8` - Secondary text
+- `--border-default: rgba(148, 163, 184, 0.1)` - Subtle borders
+
+**Typography**:
+- UI Font: Plus Jakarta Sans (Google Fonts)
+- Code Font: JetBrains Mono (Google Fonts)
+- Font weights: 400, 500, 600, 700
+
+**Visual Effects**:
+- Glass-morphism: `backdrop-filter: blur(12px)` on headers, modals
+- Gradients: Linear gradients for backgrounds and buttons
+- Shadows: Layered shadows with accent glow
+- Animations: fadeIn, slideIn, spin, pulse, glow
+
+**Component Styling**:
+- Buttons: Gradient backgrounds, hover lift effects
+- Inputs: Border glow on focus
+- Cards: Subtle borders with elevated backgrounds
+- Empty states: Centered with icon, title, description, steps
+
+### Radix UI Components
+- Dialog: Settings modal with glass-morphism
+- Select: Language selector with hover highlights
+- Separator: Visual dividers
+- DropdownMenu: File creation menu with animated items
+
+### Custom CSS Classes
+- `.btn-primary`, `.btn-secondary`, `.btn-ghost` - Button variants
+- `.glass` - Glass-morphism effect
+- `.gradient-text` - Gradient text effect
+- `.animate-fadeIn`, `.animate-glow` - Animations
+- Custom scrollbar styling
 - Layout utilities (flex, grid, spacing)
 - Color utilities (gray scale, blue, red)
 - Typography utilities

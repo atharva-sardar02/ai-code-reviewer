@@ -2,6 +2,7 @@ import type { AppState, Thread, ThreadAction, File } from './types'
 
 export const initialState: AppState = {
   files: [],
+  openFileIds: [],  // Start with no open tabs
   activeFileId: null,
   threads: [],
   activeThreadId: null,
@@ -17,7 +18,21 @@ export function threadReducer(
       return {
         ...state,
         files: [...state.files, action.payload],
+        openFileIds: [...state.openFileIds, action.payload.id],  // Also open the file
         activeFileId: action.payload.id,
+      }
+    }
+
+    case 'LOAD_FILE': {
+      // Load file without opening it (used for restoring from Firestore)
+      // Check if file already exists (avoid duplicates)
+      if (state.files.some((f) => f.id === action.payload.id)) {
+        return state
+      }
+      return {
+        ...state,
+        files: [...state.files, action.payload],
+        // Don't add to openFileIds - user needs to click to open
       }
     }
 
@@ -41,18 +56,64 @@ export function threadReducer(
           ? state.activeThreadId
           : null
 
-      // If deleting active file, switch to another file or null
+      // Remove from open files
+      const newOpenFileIds = state.openFileIds.filter((id) => id !== fileId)
+
+      // If deleting active file, switch to another open file or null
       const newActiveFileId =
         state.activeFileId === fileId
-          ? state.files.find((f) => f.id !== fileId)?.id || null
+          ? newOpenFileIds[newOpenFileIds.length - 1] || null
           : state.activeFileId
 
       return {
         ...state,
         files: state.files.filter((file) => file.id !== fileId),
+        openFileIds: newOpenFileIds,
         activeFileId: newActiveFileId,
         threads: newThreads,
         activeThreadId: newActiveThreadId,
+      }
+    }
+
+    case 'OPEN_FILE': {
+      const fileId = action.payload
+      // Check if file exists
+      const fileExists = state.files.some((f) => f.id === fileId)
+      if (!fileExists) return state
+
+      // Check if already open
+      if (state.openFileIds.includes(fileId)) {
+        // Just set as active
+        return {
+          ...state,
+          activeFileId: fileId,
+          activeThreadId: null,
+        }
+      }
+
+      return {
+        ...state,
+        openFileIds: [...state.openFileIds, fileId],
+        activeFileId: fileId,
+        activeThreadId: null,
+      }
+    }
+
+    case 'CLOSE_FILE': {
+      const fileId = action.payload
+      const newOpenFileIds = state.openFileIds.filter((id) => id !== fileId)
+
+      // If closing active file, switch to another open file or null
+      const newActiveFileId =
+        state.activeFileId === fileId
+          ? newOpenFileIds[newOpenFileIds.length - 1] || null
+          : state.activeFileId
+
+      return {
+        ...state,
+        openFileIds: newOpenFileIds,
+        activeFileId: newActiveFileId,
+        activeThreadId: state.activeFileId === fileId ? null : state.activeThreadId,
       }
     }
 

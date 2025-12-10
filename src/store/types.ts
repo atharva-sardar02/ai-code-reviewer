@@ -32,6 +32,7 @@ export interface Selection {
 
 export interface AppState {
   files: File[]
+  openFileIds: string[]  // Files currently open in tabs
   activeFileId: string | null
   threads: Thread[]
   activeThreadId: string | null
@@ -41,10 +42,13 @@ export interface AppState {
 // Action types
 export type ThreadAction =
   | { type: 'CREATE_FILE'; payload: File }
+  | { type: 'LOAD_FILE'; payload: File }  // Load file without opening in tab (for Firestore restore)
   | { type: 'UPDATE_FILE'; payload: { fileId: string; content: string } }
   | { type: 'DELETE_FILE'; payload: string }
   | { type: 'SET_ACTIVE_FILE'; payload: string | null }
   | { type: 'RENAME_FILE'; payload: { fileId: string; name: string; path: string } }
+  | { type: 'OPEN_FILE'; payload: string }  // Open file in tab
+  | { type: 'CLOSE_FILE'; payload: string }  // Close file tab (doesn't delete)
   | { type: 'CREATE_THREAD'; payload: { id: string; fileId: string; startLine: number; endLine: number } }
   | { type: 'ADD_MESSAGE'; payload: { threadId: string; message: Message } }
   | { type: 'SET_ACTIVE_THREAD'; payload: string | null }

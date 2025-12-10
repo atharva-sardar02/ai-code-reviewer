@@ -1,11 +1,11 @@
 import { useThreads } from '../../hooks/useThreads'
 
 export function FileTabs() {
-  const { files, activeFileId, setActiveFile, deleteFile } = useThreads()
+  const { openFiles, activeFileId, openFile, closeFile } = useThreads()
   
   const handleDownloadFile = (e: React.MouseEvent, fileId: string) => {
     e.stopPropagation()
-    const file = files.find(f => f.id === fileId)
+    const file = openFiles.find(f => f.id === fileId)
     if (!file) return
     
     // Create a blob with the file content
@@ -21,15 +21,15 @@ export function FileTabs() {
   }
 
   const handleTabClick = (fileId: string) => {
-    setActiveFile(fileId)
+    openFile(fileId)  // This will set as active
   }
 
   const handleCloseTab = (e: React.MouseEvent, fileId: string) => {
     e.stopPropagation()
-    deleteFile(fileId)
+    closeFile(fileId)  // Just close the tab, don't delete
   }
 
-  if (files.length === 0) {
+  if (openFiles.length === 0) {
     return null
   }
 
@@ -37,127 +37,136 @@ export function FileTabs() {
     <div
       style={{
         display: 'flex',
-        borderBottom: '1px solid #374151',
-        backgroundColor: '#1f2937',
+        borderBottom: '1px solid rgba(148, 163, 184, 0.08)',
+        background: '#111827',
         overflowX: 'auto',
         flexShrink: 0,
       }}
     >
-      {files.map((file) => (
-        <div
-          key={file.id}
-          onClick={() => handleTabClick(file.id)}
-          style={{
-            padding: '0.5rem 1rem',
-            borderRight: '1px solid #374151',
-            cursor: 'pointer',
-            backgroundColor:
-              activeFileId === file.id ? '#111827' : 'transparent',
-            color: activeFileId === file.id ? '#ffffff' : '#9ca3af',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            whiteSpace: 'nowrap',
-            minWidth: '120px',
-            position: 'relative',
-          }}
-          onMouseEnter={(e) => {
-            if (activeFileId !== file.id) {
-              e.currentTarget.style.backgroundColor = '#374151'
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (activeFileId !== file.id) {
-              e.currentTarget.style.backgroundColor = 'transparent'
-            }
-          }}
-        >
-          <span
+      {openFiles.map((file) => {
+        const isActive = activeFileId === file.id
+        return (
+          <div
+            key={file.id}
+            onClick={() => handleTabClick(file.id)}
             style={{
-              fontSize: '0.875rem',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
+              padding: '0.625rem 1rem',
+              cursor: 'pointer',
+              background: isActive 
+                ? 'linear-gradient(180deg, rgba(6, 182, 212, 0.08) 0%, #0a0e17 100%)'
+                : 'transparent',
+              borderBottom: isActive ? '2px solid #06b6d4' : '2px solid transparent',
+              color: isActive ? '#f1f5f9' : '#64748b',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
               whiteSpace: 'nowrap',
-              flex: 1,
-            }}
-          >
-            {file.name}
-          </span>
-          <button
-            onClick={(e) => handleDownloadFile(e, file.id)}
-            style={{
-              padding: '0.25rem',
-              backgroundColor: 'transparent',
-              border: 'none',
-              color: '#9ca3af',
-              cursor: 'pointer',
-              borderRadius: '0.25rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
+              minWidth: '120px',
+              position: 'relative',
+              transition: 'all 150ms ease',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.color = '#3b82f6'
-              e.currentTarget.style.backgroundColor = '#374151'
+              if (!isActive) {
+                e.currentTarget.style.background = 'rgba(148, 163, 184, 0.05)'
+                e.currentTarget.style.color = '#94a3b8'
+              }
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.color = '#9ca3af'
-              e.currentTarget.style.backgroundColor = 'transparent'
+              if (!isActive) {
+                e.currentTarget.style.background = 'transparent'
+                e.currentTarget.style.color = '#64748b'
+              }
             }}
-            title="Download file"
           >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
+            <span
+              style={{
+                fontSize: '0.8125rem',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                flex: 1,
+                fontWeight: isActive ? 500 : 400,
+              }}
             >
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-          </button>
-          <button
-            onClick={(e) => handleCloseTab(e, file.id)}
-            style={{
-              padding: '0.25rem',
-              backgroundColor: 'transparent',
-              border: 'none',
-              color: '#9ca3af',
-              cursor: 'pointer',
-              borderRadius: '0.25rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = '#ef4444'
-              e.currentTarget.style.backgroundColor = '#374151'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = '#9ca3af'
-              e.currentTarget.style.backgroundColor = 'transparent'
-            }}
-            title="Close file"
-          >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
+              {file.name}
+            </span>
+            <button
+              onClick={(e) => handleDownloadFile(e, file.id)}
+              style={{
+                padding: '0.25rem',
+                background: 'transparent',
+                border: 'none',
+                color: '#475569',
+                cursor: 'pointer',
+                borderRadius: '0.25rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                transition: 'all 150ms ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = '#06b6d4'
+                e.currentTarget.style.background = 'rgba(6, 182, 212, 0.1)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = '#475569'
+                e.currentTarget.style.background = 'transparent'
+              }}
+              title="Download file"
             >
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-      ))}
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+            </button>
+            <button
+              onClick={(e) => handleCloseTab(e, file.id)}
+              style={{
+                padding: '0.25rem',
+                background: 'transparent',
+                border: 'none',
+                color: '#475569',
+                cursor: 'pointer',
+                borderRadius: '0.25rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                transition: 'all 150ms ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = '#ef4444'
+                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = '#475569'
+                e.currentTarget.style.background = 'transparent'
+              }}
+              title="Close file"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              >
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        )
+      })}
     </div>
   )
 }
-

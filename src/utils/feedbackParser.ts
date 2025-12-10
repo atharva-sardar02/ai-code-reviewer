@@ -45,12 +45,12 @@ export function parseFeedback(response: string): FeedbackCategory[] {
   
   for (const pattern of patterns) {
     const regex = new RegExp(pattern.regex.source, 'gi')
-    let match
+    let match: RegExpExecArray | null
     // Reset lastIndex to avoid issues with global regex
     regex.lastIndex = 0
     while ((match = regex.exec(response)) !== null) {
       // Avoid duplicates - check if we already have this position
-      const existing = categoryPositions.find(p => p.index === match.index)
+      const existing = categoryPositions.find(p => p.index === match!.index)
       if (!existing) {
         categoryPositions.push({
           type: pattern.type,
@@ -159,7 +159,6 @@ export function parseFeedback(response: string): FeedbackCategory[] {
   // Helper function to calculate similarity between two strings
   function calculateSimilarity(str1: string, str2: string): number {
     const longer = str1.length > str2.length ? str1 : str2
-    const shorter = str1.length > str2.length ? str2 : str1
     if (longer.length === 0) return 1.0
     
     // Simple word-based similarity

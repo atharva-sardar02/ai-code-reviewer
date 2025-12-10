@@ -23,6 +23,29 @@ export function useThreads() {
     return fileId
   }
 
+  const createFileFromContent = (name: string, content: string, language: string = 'javascript') => {
+    const fileId = `file-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+    const newFile: File = {
+      id: fileId,
+      name,
+      path: name,
+      content,
+      language,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    }
+    dispatch({
+      type: 'CREATE_FILE',
+      payload: newFile,
+    })
+    // Set as active file after creation
+    dispatch({
+      type: 'SET_ACTIVE_FILE',
+      payload: fileId,
+    })
+    return fileId
+  }
+
   const updateFile = (fileId: string, content: string) => {
     dispatch({
       type: 'UPDATE_FILE',
@@ -50,6 +73,20 @@ export function useThreads() {
     dispatch({
       type: 'RENAME_FILE',
       payload: { fileId, name, path: name },
+    })
+  }
+
+  const openFile = (fileId: string) => {
+    dispatch({
+      type: 'OPEN_FILE',
+      payload: fileId,
+    })
+  }
+
+  const closeFile = (fileId: string) => {
+    dispatch({
+      type: 'CLOSE_FILE',
+      payload: fileId,
     })
   }
 
@@ -104,28 +141,31 @@ export function useThreads() {
     })
   }
 
-  const setApiKey = (apiKey: string | null) => {
-    dispatch({
-      type: 'SET_API_KEY',
-      payload: apiKey,
-    })
-  }
-
   const activeFile = state.files.find((f) => f.id === state.activeFileId) || null
+  
+  // Get open files in order
+  const openFiles = state.openFileIds
+    .map((id) => state.files.find((f) => f.id === id))
+    .filter((f): f is File => f !== undefined)
 
   return {
     state,
     files: state.files,
+    openFiles,
+    openFileIds: state.openFileIds,
     activeFile,
     activeFileId: state.activeFileId,
     threads: state.threads,
     activeThreadId: state.activeThreadId,
     apiKey: state.apiKey,
     createFile,
+    createFileFromContent,
     updateFile,
     deleteFile,
     setActiveFile,
     renameFile,
+    openFile,
+    closeFile,
     createThread,
     addMessage,
     deleteThread,
@@ -133,6 +173,5 @@ export function useThreads() {
     toggleThreadExpanded,
     setThreadLoading,
     setThreadError,
-    setApiKey,
   }
 }

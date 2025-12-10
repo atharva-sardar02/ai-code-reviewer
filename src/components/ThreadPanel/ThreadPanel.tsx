@@ -12,9 +12,8 @@ export function ThreadPanel() {
       <div
         style={{
           height: '100%',
-          backgroundColor: '#111827',
-          borderLeft: '1px solid #1f2937',
-          padding: '1.5rem',
+          background: 'linear-gradient(180deg, #0a0e17 0%, #0d1117 100%)',
+          padding: '2rem',
           display: 'flex',
           flexDirection: 'column',
         }}
@@ -27,17 +26,28 @@ export function ThreadPanel() {
             justifyContent: 'center',
             flex: 1,
             textAlign: 'center',
-            color: '#9ca3af',
           }}
         >
-          <div style={{ marginBottom: '1.5rem' }}>
+          {/* Illustration */}
+          <div
+            style={{
+              marginBottom: '1.5rem',
+              width: '80px',
+              height: '80px',
+              background: 'radial-gradient(circle, rgba(6, 182, 212, 0.1) 0%, transparent 70%)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
             <svg
-              width="64"
-              height="64"
+              width="40"
+              height="40"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
-              style={{ color: '#4b5563' }}
+              style={{ color: '#06b6d4', opacity: 0.8 }}
             >
               <path
                 strokeLinecap="round"
@@ -47,41 +57,55 @@ export function ThreadPanel() {
               />
             </svg>
           </div>
-          <p
+          <h3
             style={{
-              fontSize: '1.125rem',
-              fontWeight: 500,
+              fontSize: '1rem',
+              fontWeight: 600,
               marginBottom: '0.5rem',
-              color: '#d1d5db',
+              color: '#f1f5f9',
             }}
           >
-            {activeFileId ? 'No threads for this file' : 'No file open'}
-          </p>
+            {activeFileId ? 'No threads for this file' : 'No file selected'}
+          </h3>
           <p
             style={{
               fontSize: '0.875rem',
-              color: '#6b7280',
-              marginBottom: '1rem',
-              maxWidth: '24rem',
+              color: '#64748b',
+              marginBottom: '1.5rem',
+              maxWidth: '280px',
+              lineHeight: '1.6',
             }}
           >
             {activeFileId
               ? 'Select code in the editor and click "Ask AI" to start a conversation'
-              : 'Open a file to start creating threads'}
+              : 'Open a file to begin creating threads'}
           </p>
           <div
             style={{
               fontSize: '0.75rem',
-              color: '#4b5563',
-              maxWidth: '24rem',
+              color: '#475569',
+              maxWidth: '280px',
               display: 'flex',
               flexDirection: 'column',
-              gap: '0.375rem',
+              gap: '0.5rem',
+              padding: '1rem',
+              background: 'rgba(148, 163, 184, 0.03)',
+              borderRadius: '0.75rem',
+              border: '1px solid rgba(148, 163, 184, 0.05)',
             }}
           >
-            <p>• Select specific lines of code</p>
-            <p>• Click "Ask AI" button in the editor</p>
-            <p>• Ask questions or request code reviews</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ color: '#06b6d4' }}>1.</span>
+              <span>Select lines of code</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ color: '#06b6d4' }}>2.</span>
+              <span>Click "Ask AI" button</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ color: '#06b6d4' }}>3.</span>
+              <span>Get intelligent feedback</span>
+            </div>
           </div>
         </div>
       </div>
@@ -94,8 +118,7 @@ export function ThreadPanel() {
     <div
       style={{
         height: '100%',
-        backgroundColor: '#111827',
-        borderLeft: '1px solid #1f2937',
+        background: 'linear-gradient(180deg, #0a0e17 0%, #0d1117 100%)',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
@@ -105,10 +128,11 @@ export function ThreadPanel() {
       <div
         style={{
           display: 'flex',
-          borderBottom: '1px solid #1f2937',
-          backgroundColor: '#111827',
+          borderBottom: '1px solid rgba(148, 163, 184, 0.08)',
+          background: 'rgba(17, 24, 39, 0.5)',
           overflowX: 'auto',
-          minHeight: '40px',
+          minHeight: '44px',
+          padding: '0 0.5rem',
         }}
       >
         {fileThreads.map((thread) => {
@@ -121,29 +145,46 @@ export function ThreadPanel() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.5rem',
-                padding: '0.5rem 0.75rem',
+                padding: '0.625rem 0.875rem',
                 cursor: 'pointer',
-                backgroundColor: isActive ? '#1f2937' : 'transparent',
-                borderBottom: isActive ? '2px solid #2563eb' : '2px solid transparent',
-                color: isActive ? '#ffffff' : '#9ca3af',
-                fontSize: '0.875rem',
+                background: isActive 
+                  ? 'linear-gradient(180deg, rgba(6, 182, 212, 0.1) 0%, transparent 100%)'
+                  : 'transparent',
+                borderBottom: isActive ? '2px solid #06b6d4' : '2px solid transparent',
+                color: isActive ? '#f1f5f9' : '#64748b',
+                fontSize: '0.8125rem',
                 whiteSpace: 'nowrap',
                 position: 'relative',
-                minWidth: '120px',
+                minWidth: '100px',
+                borderRadius: '0.5rem 0.5rem 0 0',
+                transition: 'all 150ms ease',
               }}
               onMouseEnter={(e) => {
                 if (!isActive) {
-                  e.currentTarget.style.backgroundColor = '#1a1f2e'
+                  e.currentTarget.style.background = 'rgba(148, 163, 184, 0.05)'
+                  e.currentTarget.style.color = '#94a3b8'
                 }
               }}
               onMouseLeave={(e) => {
                 if (!isActive) {
-                  e.currentTarget.style.backgroundColor = 'transparent'
+                  e.currentTarget.style.background = 'transparent'
+                  e.currentTarget.style.color = '#64748b'
                 }
               }}
             >
-              <span style={{ fontSize: '0.75rem' }}>
-                Lines {thread.startLine}-{thread.endLine}
+              <span
+                style={{
+                  fontSize: '0.6875rem',
+                  fontWeight: 500,
+                  background: isActive 
+                    ? 'rgba(6, 182, 212, 0.15)'
+                    : 'rgba(148, 163, 184, 0.1)',
+                  padding: '0.125rem 0.375rem',
+                  borderRadius: '0.25rem',
+                  color: isActive ? '#06b6d4' : '#64748b',
+                }}
+              >
+                L{thread.startLine}-{thread.endLine}
               </span>
               {thread.isLoading && (
                 <svg
@@ -152,6 +193,7 @@ export function ThreadPanel() {
                   viewBox="0 0 12 12"
                   style={{
                     animation: 'spin 1s linear infinite',
+                    color: '#06b6d4',
                   }}
                 >
                   <circle
@@ -163,7 +205,7 @@ export function ThreadPanel() {
                     strokeWidth="1.5"
                     strokeDasharray="6 6"
                     strokeLinecap="round"
-                    opacity="0.5"
+                    opacity="0.3"
                   />
                   <circle
                     cx="6"
@@ -179,7 +221,7 @@ export function ThreadPanel() {
                 </svg>
               )}
               {thread.error && (
-                <span style={{ color: '#f87171', fontSize: '0.75rem' }}>⚠</span>
+                <span style={{ color: '#ef4444', fontSize: '0.75rem' }}>⚠</span>
               )}
               <button
                 onClick={(e) => {
@@ -199,23 +241,24 @@ export function ThreadPanel() {
                 }}
                 style={{
                   marginLeft: 'auto',
-                  padding: '0.125rem 0.25rem',
-                  backgroundColor: 'transparent',
+                  padding: '0.25rem',
+                  background: 'transparent',
                   border: 'none',
-                  color: '#9ca3af',
+                  color: '#475569',
                   cursor: 'pointer',
-                  borderRadius: '0.125rem',
+                  borderRadius: '0.25rem',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  transition: 'all 150ms ease',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#374151'
-                  e.currentTarget.style.color = '#ffffff'
+                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'
+                  e.currentTarget.style.color = '#ef4444'
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent'
-                  e.currentTarget.style.color = '#9ca3af'
+                  e.currentTarget.style.background = 'transparent'
+                  e.currentTarget.style.color = '#475569'
                 }}
                 aria-label="Close thread"
               >

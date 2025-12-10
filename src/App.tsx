@@ -14,6 +14,8 @@ function AppContent() {
     activeFile,
     activeFileId,
     createThread,
+    createFile,
+    createFileFromContent,
     updateFile,
     threads,
     activeThreadId,
@@ -23,6 +25,7 @@ function AppContent() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [language, setLanguage] = useState('javascript')
   const initialMessageSentRef = useRef<Set<string>>(new Set())
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Update language when active file changes
   useEffect(() => {
@@ -81,6 +84,64 @@ function AppContent() {
     setIsSettingsOpen(true)
   }
 
+  const getLanguageFromExtension = (filename: string): string => {
+    const ext = filename.split('.').pop()?.toLowerCase() || 'javascript'
+    const languageMap: Record<string, string> = {
+      'ts': 'typescript',
+      'tsx': 'typescript',
+      'js': 'javascript',
+      'jsx': 'javascript',
+      'py': 'python',
+      'java': 'java',
+      'cpp': 'cpp',
+      'c': 'c',
+      'cs': 'csharp',
+      'go': 'go',
+      'rs': 'rust',
+      'rb': 'ruby',
+      'php': 'php',
+      'swift': 'swift',
+      'kt': 'kotlin',
+      'html': 'html',
+      'css': 'css',
+      'scss': 'scss',
+      'json': 'json',
+      'xml': 'xml',
+      'md': 'markdown',
+      'yaml': 'yaml',
+      'yml': 'yaml',
+    }
+    return languageMap[ext] || 'javascript'
+  }
+
+  const handleCreateFile = () => {
+    const name = prompt('Enter file name (e.g., App.tsx):')
+    if (name && name.trim()) {
+      const lang = getLanguageFromExtension(name)
+      createFile(name.trim(), lang)
+    }
+  }
+
+  const handleUploadFile = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const content = event.target?.result as string
+      const lang = getLanguageFromExtension(file.name)
+      createFileFromContent(file.name, content, lang)
+    }
+    reader.readAsText(file)
+
+    // Reset input so same file can be uploaded again
+    e.target.value = ''
+  }
+
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -96,9 +157,9 @@ function AppContent() {
       }
     }
 
-    window.addEventListener('keydown', handleKeyDown as any)
+    window.addEventListener('keydown', handleKeyDown as EventListener)
     return () => {
-      window.removeEventListener('keydown', handleKeyDown as any)
+      window.removeEventListener('keydown', handleKeyDown as EventListener)
     }
   }, [activeThreadId, setActiveThread])
 
@@ -118,7 +179,7 @@ function AppContent() {
         height: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        backgroundColor: '#111827',
+        background: 'linear-gradient(180deg, #0a0e17 0%, #0d1117 100%)',
       }}
     >
       <Header
@@ -139,7 +200,9 @@ function AppContent() {
         <div
           style={{
             width: '15%',
-            borderRight: '1px solid #374151',
+            minWidth: '180px',
+            maxWidth: '280px',
+            borderRight: '1px solid rgba(148, 163, 184, 0.08)',
             display: 'flex',
             flexDirection: 'column',
             minHeight: 0,
@@ -148,14 +211,15 @@ function AppContent() {
           <FileExplorer />
         </div>
 
-        {/* Middle: Code Editor (45%) */}
+        {/* Middle: Code Editor - takes full width when no file open */}
         <div
           style={{
-            width: '45%',
-            borderRight: '1px solid #374151',
+            flex: 1,
+            borderRight: activeFile ? '1px solid rgba(148, 163, 184, 0.08)' : 'none',
             display: 'flex',
             flexDirection: 'column',
             minHeight: 0,
+            background: '#0a0e17',
           }}
         >
           <FileTabs />
@@ -164,25 +228,39 @@ function AppContent() {
             onChange={handleCodeChange}
             onSelectionChange={handleSelectionChange}
             onAskAI={handleAskAI}
+            onCreateFile={handleCreateFile}
+            onUploadFile={handleUploadFile}
             highlightLines={highlightLines}
           />
         </div>
 
-        {/* Right: Thread Panel (40%) */}
-        <div
-          style={{
-            width: '40%',
-            display: 'flex',
-            flexDirection: 'column',
-            minHeight: 0,
-          }}
-        >
-          <ThreadPanel />
-        </div>
+        {/* Right: Thread Panel - only show when a file is open */}
+        {activeFile && (
+          <div
+            style={{
+              width: '48%',
+              minWidth: '380px',
+              maxWidth: '600px',
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: 0,
+            }}
+          >
+            <ThreadPanel />
+          </div>
+        )}
       </div>
       <ApiKeyInput
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
+      />
+      {/* Hidden file input for upload */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        onChange={handleFileInputChange}
+        style={{ display: 'none' }}
+        accept=".ts,.tsx,.js,.jsx,.py,.java,.cpp,.c,.cs,.go,.rs,.rb,.php,.swift,.kt,.html,.css,.scss,.json,.xml,.md,.yaml,.yml,.txt"
       />
     </div>
   )
